@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Ntfy Sender</title>
+    <title>DL Test Appointment OTP Sender</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@
     <!-- MAIN APP CONTENT -->
     <div class="flex-1 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Secure Ntfy Push</h1>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Secure OTP Forward</h1>
             <p class="text-gray-500 text-sm mb-8">Enter a numeric code to securely dispatch.</p>
             
             <div class="space-y-6">
@@ -105,7 +105,8 @@
                         type="text" 
                         inputmode="numeric" 
                         pattern="[0-9]*" 
-                        id="numberInput" 
+                        id="numberInput"
+                        autocomplete="one-time-code"
                         placeholder="000000"
                         class="w-full text-center text-4xl tracking-widest font-semibold text-gray-900 border-2 border-gray-200 rounded-xl py-4 px-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all placeholder-gray-300"
                     >
