@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTP Verification Demo</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 390px;
+      padding: 28px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .mode-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+
+    .switch input {
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      background: #cbd5e1;
+      border-radius: 20px;
+      transition: 0.2s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .switch input:checked + .slider {
+      background: #2563eb;
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(22px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 25px;
+      color: #0f172a;
+    }
+
+    .description {
+      margin: 0 0 24px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    #otp {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      outline: none;
+      font-size: 24px;
+      letter-spacing: 8px;
+      text-align: center;
+    }
+
+    #otp:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    #otp::placeholder {
+      letter-spacing: 5px;
+      color: #cbd5e1;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px;
+      border: none;
+      border-radius: 9px;
+      background: #2563eb;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    #status {
+      min-height: 20px;
+      margin-top: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: #475569;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+
+    <div class="topbar">
+      <span class="mode-label" id="modeLabel">
+        Manual Submit
+      </span>
+
+      <label class="switch" aria-label="Toggle auto submit">
+        <input type="checkbox" id="autoSubmit">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <h1>OTP Verification</h1>
+
+    <p class="description">
+      Enter your 6-digit demo OTP to test the form.
+    </p>
+
+    <form id="otpForm">
+      <label for="otp">Enter OTP</label>
+
+      <input
+        id="otp"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        minlength="6"
+        placeholder="••••••"
+        autocomplete="off"
+        required
+        aria-describedby="status"
+      >
+
+      <button id="sendBtn" type="submit" disabled>
+        Send OTP
+      </button>
+    </form>
+
+    <div id="status" role="status" aria-live="polite"></div>
+
+    <p class="notice">
+      Demo mode: the entered code is validated locally.
+      No OTP is sent to any server.
+    </p>
+
+  </main>
+
+  <script>
+    const otpInput = document.getElementById("otp");
+    const autoSubmit = document.getElementById("autoSubmit");
+    const modeLabel = document.getElementById("modeLabel");
+    const sendBtn = document.getElementById("sendBtn");
+    const otpForm = document.getElementById("otpForm");
+    const status = document.getElementById("status");
+
+    let lastAutoSubmittedOtp = "";
+
+    autoSubmit.addEventListener("change", () => {
+      modeLabel.textContent = autoSubmit.checked
+        ? "Auto Submit"
+        : "Manual Submit";
+
+      status.textContent = "";
+
+      if (
+        autoSubmit.checked &&
+        /^[0-9]{6}$/.test(otpInput.value)
+      ) {
+        submitDemo();
+      }
+    });
+
+    otpInput.addEventListener("input", () => {
+      // Keep numeric characters only.
+      otpInput.value = otpInput.value
+        .replace(/[^0-9]/g, "")
+        .slice(0, 6);
+
+      const valid = /^[0-9]{6}$/.test(otpInput.value);
+
+      sendBtn.disabled = !valid;
+      status.textContent = "";
+
+      if (autoSubmit.checked && valid) {
+        submitDemo();
+      } else {
+        lastAutoSubmittedOtp = "";
+      }
+    });
+
+    otpForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!/^[0-9]{6}$/.test(otpInput.value)) {
+        status.textContent = "Enter exactly 6 digits.";
+        return;
+      }
+
+      submitDemo();
+    });
+
+    function submitDemo() {
+      const otp = otpInput.value;
+
+      if (!/^[0-9]{6}$/.test(otp)) {
+        return;
+      }
+
+      if (autoSubmit.checked && lastAutoSubmittedOtp === otp) {
+        return;
+      }
+
+      lastAutoSubmittedOtp = otp;
+
+      // Safe local demonstration only.
+      // No network request is made.
+      status.textContent =
+        "Demo submission successful. No OTP was transmitted.";
+
+      console.log("Demo OTP form submitted successfully.");
+    }
+  </script>
+</body>
+</html>
