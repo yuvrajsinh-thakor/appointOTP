@@ -1,292 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Numeric Data Sender</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f1f5f9;
-      font-family: Arial, sans-serif;
-    }
-
-    .card {
-      width: min(90%, 380px);
-      padding: 28px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
-    }
-
-    .topbar label {
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 46px;
-      height: 25px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      inset: 0;
-      cursor: pointer;
-      background: #cbd5e1;
-      border-radius: 25px;
-      transition: 0.2s;
-    }
-
-    .slider::before {
-      content: "";
-      position: absolute;
-      width: 19px;
-      height: 19px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.2s;
-    }
-
-    input:checked + .slider {
-      background: #2563eb;
-    }
-
-    input:checked + .slider::before {
-      transform: translateX(21px);
-    }
-
-    h2 {
-      margin: 0 0 8px;
-      text-align: center;
-      color: #0f172a;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: #64748b;
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-
-    #numberInput {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 9px;
-      font-size: 22px;
-      text-align: center;
-      letter-spacing: 4px;
-      outline: none;
-    }
-
-    #numberInput:focus {
-      border-color: #2563eb;
-    }
-
-    #sendButton {
-      width: 100%;
-      margin-top: 15px;
-      padding: 13px;
-      border: none;
-      border-radius: 9px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    #sendButton:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-    }
-
-    #status {
-      margin-top: 18px;
-      text-align: center;
-      font-size: 14px;
-      overflow-wrap: anywhere;
-    }
-
-    .hint {
-      margin-top: 16px;
-      font-size: 12px;
-      color: #64748b;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ntfy Sender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        /* Custom styles for the toggle switch to make it look modern */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6; /* blue-500 */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        /* Toast animation */
+        .toast-enter {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-exit {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .history-item {
+            animation: popIn 0.3s ease-out forwards;
+        }
+    </style>
 </head>
+<body class="min-h-screen flex flex-col relative overflow-hidden">
 
-<body>
-  <main class="card">
-
-    <div class="topbar">
-      <label id="modeLabel" for="autoMode">
-        Manual Submit
-      </label>
-
-      <label class="switch">
-        <input type="checkbox" id="autoMode">
-        <span class="slider"></span>
-      </label>
+    <!-- Top Left Controls -->
+    <div class="absolute top-0 left-0 p-6 z-10 w-full md:w-auto flex items-center gap-3">
+        <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+            <input type="checkbox" name="toggle" id="autoSubmitToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 ease-in-out z-10" />
+            <label for="autoSubmitToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300 ease-in-out"></label>
+        </div>
+        <label for="autoSubmitToggle" class="text-sm font-medium text-gray-700 cursor-pointer select-none" id="toggleText">
+            Manual Submit
+        </label>
     </div>
 
-    <h2>Numeric Sender</h2>
+    <!-- Center Content -->
+    <div class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Send Notification</h1>
+            <p class="text-gray-500 text-sm mb-8">Enter a numeric code to push to ntfy.sh</p>
+            
+            <div class="space-y-6">
+                <!-- Numeric Input -->
+                <div>
+                    <input 
+                        type="text" 
+                        inputmode="numeric" 
+                        pattern="[0-9]*" 
+                        id="numberInput" 
+                        placeholder="000000"
+                        class="w-full text-center text-4xl tracking-widest font-semibold text-gray-900 border-2 border-gray-200 rounded-xl py-4 px-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all placeholder-gray-300"
+                    >
+                </div>
 
-    <p class="subtitle">
-      Enter a 6-digit numeric value
-    </p>
-
-    <form id="senderForm">
-      <input
-        type="text"
-        id="numberInput"
-        inputmode="numeric"
-        pattern="[0-9]{6}"
-        maxlength="6"
-        placeholder="000000"
-        autocomplete="off"
-        aria-label="Six digit numeric value"
-        required
-      >
-
-      <button type="submit" id="sendButton">
-        Send
-      </button>
-    </form>
-
-    <div id="status" role="status" aria-live="polite">
-      Ready
+                <!-- Send Button -->
+                <button 
+                    id="sendBtn" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                    Send to Ntfy
+                </button>
+                
+                <!-- Recent History -->
+                <div class="pt-6 border-t border-gray-100 mt-2">
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-left">Recent History</h2>
+                    <ul id="historyList" class="space-y-2 text-left max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                        <li id="emptyHistory" class="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">No recent sends</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <p class="hint">
-      Auto mode submits when six digits are entered.
-    </p>
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 transition-all duration-300 ease-in-out transform -translate-y-24 opacity-0 z-50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span class="font-medium" id="toastMessage">Successfully sent!</span>
+    </div>
 
-  </main>
+    <script>
+        const inputField = document.getElementById('numberInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const toggle = document.getElementById('autoSubmitToggle');
+        const toggleText = document.getElementById('toggleText');
+        const toast = document.getElementById('toast');
+        const historyList = document.getElementById('historyList');
+        const emptyHistory = document.getElementById('emptyHistory');
 
-  <script>
-    const input = document.getElementById("numberInput");
-    const autoMode = document.getElementById("autoMode");
-    const modeLabel = document.getElementById("modeLabel");
-    const form = document.getElementById("senderForm");
-    const sendButton = document.getElementById("sendButton");
-    const status = document.getElementById("status");
+        // Ntfy Webhook URL
+        const NTFY_URL = 'https://ntfy.sh/100qZQuafcSX5L2X0u6100';
 
-    // Use only for ordinary, non-sensitive numeric data.
-    // Do not forward OTPs, passwords, or authentication codes.
-    const ENDPOINT = "/api/numeric-data";
-
-    let sending = false;
-    let lastAutoValue = "";
-
-    autoMode.addEventListener("change", () => {
-      modeLabel.textContent = autoMode.checked
-        ? "Auto Submit"
-        : "Manual Submit";
-
-      lastAutoValue = "";
-
-      status.textContent = autoMode.checked
-        ? "Auto mode enabled"
-        : "Manual mode enabled";
-    });
-
-    input.addEventListener("input", () => {
-      // Keep ASCII digits only.
-      input.value = input.value.replace(/[^0-9]/g, "").slice(0, 6);
-
-      if (input.value.length !== 6) {
-        lastAutoValue = "";
-        return;
-      }
-
-      if (
-        autoMode.checked &&
-        input.value !== lastAutoValue &&
-        !sending
-      ) {
-        lastAutoValue = input.value;
-        sendData();
-      }
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      if (!autoMode.checked) {
-        sendData();
-      }
-    });
-
-    async function sendData() {
-      const value = input.value;
-
-      if (!/^[0-9]{6}$/.test(value)) {
-        status.textContent = "Enter exactly 6 digits.";
-        return;
-      }
-
-      if (sending) return;
-
-      sending = true;
-      sendButton.disabled = true;
-      status.textContent = "Sending...";
-
-      try {
-        const response = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ value })
+        // Toggle label update
+        toggle.addEventListener('change', (e) => {
+            toggleText.textContent = e.target.checked ? 'Auto Submit' : 'Manual Submit';
+            if (e.target.checked && inputField.value.length === 6) {
+                // If auto submit is turned on and exactly 6 digits are already there
+                handleSend();
+            }
+            inputField.focus();
         });
 
-        if (!response.ok) {
-          throw new Error("HTTP " + response.status);
+        // Input validation and auto-submit logic
+        inputField.addEventListener('input', (e) => {
+            // Remove any non-numeric characters immediately
+            let value = e.target.value.replace(/\D/g, '');
+            e.target.value = value;
+
+            // Enable/disable send button based on input
+            if(value.length > 0) {
+                sendBtn.disabled = false;
+            } else {
+                sendBtn.disabled = true;
+            }
+
+            // Auto-submit if toggle is ON and exactly 6 digits reached
+            if (toggle.checked && value.length === 6) {
+                handleSend();
+            }
+        });
+
+        // Manual submit logic
+        sendBtn.addEventListener('click', () => {
+            if (inputField.value.length > 0) {
+                handleSend();
+            }
+        });
+
+        // Initialize button state
+        sendBtn.disabled = true;
+
+        async function handleSend() {
+            const val = inputField.value;
+            if (!val) return;
+
+            // Disable UI during send
+            inputField.disabled = true;
+            sendBtn.disabled = true;
+            const originalBtnText = sendBtn.innerText;
+            sendBtn.innerText = 'Sending...';
+
+            try {
+                // Make the POST request to ntfy.sh with raw text body
+                const response = await fetch(NTFY_URL, {
+                    method: 'POST',
+                    body: val,
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('Successfully sent: ' + val, 'bg-green-500');
+                    inputField.value = ''; // Clear input on success
+                    addHistoryItem(val);
+                } else {
+                    showToast('Failed to send. Status: ' + response.status, 'bg-red-500');
+                }
+            } catch (error) {
+                console.error('Error sending to ntfy:', error);
+                showToast('Network error occurred.', 'bg-red-500');
+            } finally {
+                // Re-enable UI
+                inputField.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.innerText = originalBtnText;
+                inputField.focus();
+                
+                // Re-disable button if input is empty (which it should be on success)
+                if(inputField.value.length === 0) {
+                    sendBtn.disabled = true;
+                }
+            }
         }
 
-        status.textContent = "Data sent successfully.";
-        input.value = "";
-        lastAutoValue = "";
+        function showToast(message, colorClass) {
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            
+            // Remove previous color classes and add the new one
+            toast.className = toast.className.replace(/bg-\w+-500/, colorClass);
+            
+            // Slide in
+            toast.classList.remove('-translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
 
-      } catch (error) {
-        status.textContent =
-          "Send failed. Check your server connection.";
+            // Slide out after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-24', 'opacity-0');
+            }, 3000);
+        }
 
-        console.error(error);
+        function addHistoryItem(value) {
+            if (emptyHistory) {
+                emptyHistory.style.display = 'none';
+            }
+            
+            const li = document.createElement('li');
+            li.className = 'history-item bg-blue-50 text-blue-900 border border-blue-100 rounded-lg px-4 py-2 font-mono text-lg flex items-center justify-between shadow-sm';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'text-xs text-blue-400 font-sans font-medium';
+            const now = new Date();
+            timeSpan.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            const valSpan = document.createElement('span');
+            valSpan.className = 'font-bold tracking-widest text-blue-700';
+            valSpan.textContent = value;
 
-      } finally {
-        sending = false;
-        sendButton.disabled = false;
-      }
-    }
-  </script>
+            li.appendChild(valSpan);
+            li.appendChild(timeSpan);
+            
+            // Insert at the top of the list
+            historyList.insertBefore(li, historyList.firstChild);
+        }
+    </script>
 </body>
 </html>
