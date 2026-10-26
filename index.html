@@ -105,8 +105,9 @@
                         type="text" 
                         inputmode="numeric" 
                         pattern="[0-9]*" 
-                        id="numberInput"
+                        id="numberInput" 
                         autocomplete="one-time-code"
+                        maxlength="6"
                         placeholder="000000"
                         class="w-full text-center text-4xl tracking-widest font-semibold text-gray-900 border-2 border-gray-200 rounded-xl py-4 px-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all placeholder-gray-300"
                     >
@@ -233,6 +234,16 @@
             }
         });
 
+        // Trigger send on 'Enter' / 'Go' / 'Search' key press
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                e.preventDefault(); // Prevent default mobile keyboard behavior
+                if (inputField.value.length > 0 && !sendBtn.disabled) {
+                    handleSend();
+                }
+            }
+        });
+
         // Manual submit trigger
         sendBtn.addEventListener('click', () => {
             if (inputField.value.length > 0) {
@@ -242,7 +253,7 @@
 
         // Initialize send button state
         sendBtn.disabled = true;
-
+ 
         async function handleSend() {
             const val = inputField.value;
             if (!val) return;
