@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DL Test Appointment OTP Sender</title>
+    <title>Secure Ntfy Sender</title>
+    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* Tailwind gray-100 */
         }
-        /* Custom styles for the toggle switch to make it look modern */
+        
+        /* Custom toggle styles */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #3b82f6; /* blue-500 */
@@ -19,15 +21,8 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #3b82f6; /* blue-500 */
         }
-        /* Toast animation */
-        .toast-enter {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .toast-exit {
-            transform: translateY(-100%);
-            opacity: 0;
-        }
+        
+        /* History Pop-in Animation */
         @keyframes popIn {
             0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -35,11 +30,58 @@
         .history-item {
             animation: popIn 0.3s ease-out forwards;
         }
+
+        /* Overlay Fade Out */
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-out;
+        }
+
+        /* Hide scrollbar for history list but allow scrolling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative overflow-hidden">
 
-    <!-- Top Left Controls -->
+    <!-- PASSWORD OVERLAY -->
+    <div id="authOverlay" class="fixed inset-0 z-[100] bg-gray-900/95 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center transform transition-transform">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
+            <p class="text-gray-500 text-sm mb-6">Please enter the master password to continue.</p>
+            
+            <input 
+                type="password" 
+                id="passwordInput" 
+                placeholder="Enter password"
+                class="w-full text-center text-xl tracking-widest font-semibold text-gray-900 border-2 border-gray-200 rounded-xl py-3 px-4 mb-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+            >
+            <p id="authError" class="text-red-500 text-sm mb-4 hidden font-medium">Incorrect password. Try again.</p>
+            
+            <button 
+                id="unlockBtn" 
+                class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all focus:outline-none focus:ring-4 focus:ring-gray-500/50"
+            >
+                Unlock
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTROLS (Top Left) -->
     <div class="absolute top-0 left-0 p-6 z-10 w-full md:w-auto flex items-center gap-3">
         <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
             <input type="checkbox" name="toggle" id="autoSubmitToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 ease-in-out z-10" />
@@ -50,11 +92,11 @@
         </label>
     </div>
 
-    <!-- Center Content -->
+    <!-- MAIN APP CONTENT -->
     <div class="flex-1 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Send Notification</h1>
-            <p class="text-gray-500 text-sm mb-8">Enter a numeric code to push to ntfy.sh</p>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Secure Ntfy Push</h1>
+            <p class="text-gray-500 text-sm mb-8">Enter a numeric code to securely dispatch.</p>
             
             <div class="space-y-6">
                 <!-- Numeric Input -->
@@ -74,14 +116,17 @@
                     id="sendBtn" 
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                    Send to Ntfy
+                    Send Payload
                 </button>
                 
                 <!-- Recent History -->
                 <div class="pt-6 border-t border-gray-100 mt-2">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-left">Recent History</h2>
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-left flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Recent Dispatch History
+                    </h2>
                     <ul id="historyList" class="space-y-2 text-left max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                        <li id="emptyHistory" class="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">No recent sends</li>
+                        <li id="emptyHistory" class="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">No recent activity</li>
                     </ul>
                 </div>
             </div>
@@ -95,6 +140,66 @@
     </div>
 
     <script>
+        /* =========================================
+           1. AUTHENTICATION LOGIC (Password Protect)
+           ========================================= */
+        const MASTER_PASSWORD = '123456';
+        const authOverlay = document.getElementById('authOverlay');
+        const passwordInput = document.getElementById('passwordInput');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const authError = document.getElementById('authError');
+
+        // Check if already authenticated via localStorage
+        if (localStorage.getItem('is_authenticated') === 'true') {
+            authOverlay.classList.add('hidden'); // Instantly hide if already authed
+        }
+
+        // Handle Unlock Attempt
+        function attemptUnlock() {
+            if (passwordInput.value === MASTER_PASSWORD) {
+                // Correct password
+                localStorage.setItem('is_authenticated', 'true');
+                authOverlay.classList.add('fade-out');
+                setTimeout(() => {
+                    authOverlay.classList.add('hidden');
+                    document.getElementById('numberInput').focus();
+                }, 400); // Wait for fade-out animation to finish
+            } else {
+                // Wrong password
+                authError.classList.remove('hidden');
+                passwordInput.value = '';
+                passwordInput.focus();
+                
+                // Shake animation for error feedback
+                authOverlay.querySelector('div').classList.add('animate-pulse');
+                setTimeout(() => authOverlay.querySelector('div').classList.remove('animate-pulse'), 500);
+            }
+        }
+
+        unlockBtn.addEventListener('click', attemptUnlock);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptUnlock();
+        });
+
+
+        /* =========================================
+           2. OBFUSCATED URL LOGIC (Option B)
+           ========================================= */
+        // The URL is split into Base64 chunks to hide it from plain text searches
+        // aHR0cHM6Ly9udGZ5LnNoLzEwMHFaUXVhZmNTWDVMMlgwdTYxMDA=
+        const _0x1a = "aHR0cHM6Ly";
+        const _0x2b = "9udGZ5LnNo";
+        const _0x3c = "LzEwMHFaUX";
+        const _0x4d = "VhZmNTWDVM";
+        const _0x5e = "MlgwdTYxMDA=";
+        
+        // This function pieces it together and decodes it exactly when needed
+        const getEndpoint = () => atob(_0x1a + _0x2b + _0x3c + _0x4d + _0x5e);
+
+
+        /* =========================================
+           3. MAIN APP LOGIC
+           ========================================= */
         const inputField = document.getElementById('numberInput');
         const sendBtn = document.getElementById('sendBtn');
         const toggle = document.getElementById('autoSubmitToggle');
@@ -103,131 +208,119 @@
         const historyList = document.getElementById('historyList');
         const emptyHistory = document.getElementById('emptyHistory');
 
-        // Ntfy Webhook URL
-        const NTFY_URL = 'https://ntfy.sh/100qZQuafcSX5L2X0u6100';
-
         // Toggle label update
         toggle.addEventListener('change', (e) => {
-            toggleText.textContent = e.target.checked ? 'Auto Submit' : 'Manual Submit';
+            toggleText.textContent = e.target.checked ? 'Auto Submit (6 digits)' : 'Manual Submit';
             if (e.target.checked && inputField.value.length === 6) {
-                // If auto submit is turned on and exactly 6 digits are already there
                 handleSend();
             }
             inputField.focus();
         });
 
-        // Input validation and auto-submit logic
+        // Input validation and auto-submit trigger
         inputField.addEventListener('input', (e) => {
-            // Remove any non-numeric characters immediately
+            // Force numeric only immediately
             let value = e.target.value.replace(/\D/g, '');
             e.target.value = value;
 
-            // Enable/disable send button based on input
-            if(value.length > 0) {
-                sendBtn.disabled = false;
-            } else {
-                sendBtn.disabled = true;
-            }
+            // Manage Send button state
+            sendBtn.disabled = value.length === 0;
 
-            // Auto-submit if toggle is ON and exactly 6 digits reached
+            // Auto-submit if toggle ON and length is exactly 6
             if (toggle.checked && value.length === 6) {
                 handleSend();
             }
         });
 
-        // Manual submit logic
+        // Manual submit trigger
         sendBtn.addEventListener('click', () => {
             if (inputField.value.length > 0) {
                 handleSend();
             }
         });
 
-        // Initialize button state
+        // Initialize send button state
         sendBtn.disabled = true;
 
         async function handleSend() {
             const val = inputField.value;
             if (!val) return;
 
-            // Disable UI during send
+            // Disable UI during transmission
             inputField.disabled = true;
             sendBtn.disabled = true;
             const originalBtnText = sendBtn.innerText;
-            sendBtn.innerText = 'Sending...';
+            sendBtn.innerText = 'Transmitting...';
 
             try {
-                // Make the POST request to ntfy.sh with raw text body
-                const response = await fetch(NTFY_URL, {
+                // Using the dynamically decoded endpoint to send the POST request
+                const response = await fetch(getEndpoint(), {
                     method: 'POST',
                     body: val,
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    }
+                    headers: { 'Content-Type': 'text/plain' }
                 });
 
                 if (response.ok) {
-                    showToast('Successfully sent: ' + val, 'bg-green-500');
-                    inputField.value = ''; // Clear input on success
+                    showToast('Payload dispatched: ' + val, 'bg-green-500');
                     addHistoryItem(val);
+                    inputField.value = ''; // Clear input on success
                 } else {
-                    showToast('Failed to send. Status: ' + response.status, 'bg-red-500');
+                    showToast('Failed to dispatch. Code: ' + response.status, 'bg-red-500');
                 }
             } catch (error) {
-                console.error('Error sending to ntfy:', error);
-                showToast('Network error occurred.', 'bg-red-500');
+                console.error('Transmission error:', error);
+                showToast('Network disruption occurred.', 'bg-red-500');
             } finally {
-                // Re-enable UI
+                // Restore UI state
                 inputField.disabled = false;
-                sendBtn.disabled = false;
                 sendBtn.innerText = originalBtnText;
                 inputField.focus();
-                
-                // Re-disable button if input is empty (which it should be on success)
-                if(inputField.value.length === 0) {
-                    sendBtn.disabled = true;
-                }
+                sendBtn.disabled = inputField.value.length === 0;
             }
         }
 
+        // Custom Toast UI Controller
         function showToast(message, colorClass) {
             const toastMessage = document.getElementById('toastMessage');
             toastMessage.textContent = message;
             
-            // Remove previous color classes and add the new one
+            // Swap background colors dynamically
             toast.className = toast.className.replace(/bg-\w+-500/, colorClass);
             
-            // Slide in
+            // Slide Toast In
             toast.classList.remove('-translate-y-24', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
 
-            // Slide out after 3 seconds
+            // Slide Toast Out after delay
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('-translate-y-24', 'opacity-0');
             }, 3000);
         }
 
+        // History UI Controller
         function addHistoryItem(value) {
             if (emptyHistory) {
                 emptyHistory.style.display = 'none';
             }
             
             const li = document.createElement('li');
-            li.className = 'history-item bg-blue-50 text-blue-900 border border-blue-100 rounded-lg px-4 py-2 font-mono text-lg flex items-center justify-between shadow-sm';
+            li.className = 'history-item bg-gray-50 text-gray-800 border border-gray-200 rounded-lg px-4 py-3 font-mono flex items-center justify-between shadow-sm';
             
+            // Format time stamp
             const timeSpan = document.createElement('span');
-            timeSpan.className = 'text-xs text-blue-400 font-sans font-medium';
+            timeSpan.className = 'text-xs text-gray-400 font-sans font-medium bg-white px-2 py-1 rounded border border-gray-100';
             const now = new Date();
             timeSpan.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
             const valSpan = document.createElement('span');
-            valSpan.className = 'font-bold tracking-widest text-blue-700';
+            valSpan.className = 'font-bold tracking-widest text-blue-600 text-lg';
             valSpan.textContent = value;
 
             li.appendChild(valSpan);
             li.appendChild(timeSpan);
             
-            // Insert at the top of the list
+            // Prepend to top of list
             historyList.insertBefore(li, historyList.firstChild);
         }
     </script>
